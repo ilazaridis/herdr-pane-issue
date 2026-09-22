@@ -1,0 +1,39 @@
+id = "ilazaridis.pane-issue"
+name = "Pane Issue"
+version = "0.1.0"
+min_herdr_version = "0.9.1"
+description = "Shows the GitHub issue each agent pane is working on as an $issue token in the Agents sidebar, and opens it with a key."
+platforms = ["linux", "macos"]
+
+# Tokens are not kept across a server restart, so label every agent again.
+[[startup]]
+command = ["./pane-issue.sh", "sync"]
+
+# Herdr has no cwd-changed event. An agent that moves into another worktree or
+# switches branch does so while working, so re-check a pane whenever its agent
+# appears or changes state, and when it is focused.
+[[events]]
+on = "pane.agent_detected"
+command = ["./pane-issue.sh", "sync"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["./pane-issue.sh", "sync"]
+
+[[events]]
+on = "pane.focused"
+command = ["./pane-issue.sh", "sync"]
+
+[[actions]]
+id = "open"
+title = "Pane issue: open in browser"
+description = "Open the GitHub issue the focused pane is working on."
+contexts = ["global", "pane"]
+command = ["./pane-issue.sh", "open"]
+
+[[actions]]
+id = "refresh"
+title = "Pane issue: refresh"
+description = "Forget cached PR lookups and label every agent pane again."
+contexts = ["global"]
+command = ["./pane-issue.sh", "refresh"]
