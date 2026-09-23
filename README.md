@@ -1,5 +1,7 @@
 # herdr-pane-issue
 
+[![Release](https://img.shields.io/github/v/release/ilazaridis/herdr-pane-issue)](https://github.com/ilazaridis/herdr-pane-issue/releases/latest)
+
 [Herdr](https://herdr.dev) plugin: shows the GitHub issue each agent pane is
 working on in the Agents sidebar, and opens it with one key.
 
