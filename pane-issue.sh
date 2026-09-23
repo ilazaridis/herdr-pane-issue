@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Publishes the GitHub issue each agent pane is working on as pane tokens:
 #   $issue      "#123", for the Agents sidebar
-#   $issue_url  the issue's page, for the open action
+#   $issue_url  the issue's page
 # Where the agent works in a linked git worktree, the number comes from the
 # worktree's name (.worktrees/fix-123-x). Anywhere else it comes from the
 # branch (feat/123-x, 123-x, fix/issue-123, fix/#123), and when the branch names
@@ -9,7 +9,7 @@
 #
 #   pane-issue.sh sync      label the event's pane, or every agent pane
 #   pane-issue.sh refresh   forget cached PR lookups, then label every agent pane
-#   pane-issue.sh open      open the focused pane's issue in the browser
+#   pane-issue.sh open      open the focused pane's PR, or its issue if it has none
 set -uo pipefail
 
 herdr=${HERDR_BIN_PATH:-herdr}
@@ -158,14 +158,25 @@ locked() {
   "$@"
 }
 
-open_issue() {
-  local pane=${HERDR_PANE_ID:-} cwd sid num url opener=xdg-open
+# URL of the pull request for the branch checked out in a directory. Not cached:
+# it runs on a key press, and the PR may have been opened a moment ago.
+pr_url() {
+  [[ -n $1 && -d $1 ]] && command -v gh >/dev/null || return 1
+  git -C "$1" symbolic-ref -q HEAD >/dev/null 2>&1 || return 1
+  (cd "$1" && with_timeout 20 gh pr view --json url --jq .url) 2>/dev/null </dev/null
+}
+
+# Opens the focused pane's pull request, or its issue when there is no PR yet.
+open_pr() {
+  local pane=${HERDR_PANE_ID:-} cwd sid dir num url opener=xdg-open
   [[ -n $pane ]] || pane=$("$herdr" pane current </dev/null | jq -r '.result.pane.pane_id // empty')
   [[ -n $pane ]] || { notify "No focused pane."; return 0; }
   IFS=$'\x1f' read -r _ cwd sid _ _ < <("$herdr" pane get "$pane" </dev/null | jq -r ".result.pane | $fields")
-  read -r num url < <(issue_for_dir "$(work_dir "${cwd:-}" "${sid:-}")")
+  dir=$(work_dir "${cwd:-}" "${sid:-}")
+  url=$(pr_url "$dir") || url=
+  [[ -n $url ]] || read -r num url < <(issue_for_dir "$dir")
   if [[ -z ${url:-} ]]; then
-    notify "No GitHub issue found for this pane's branch."
+    notify "No pull request or GitHub issue found for this pane."
     return 0
   fi
   [[ $(uname) == Darwin ]] && opener=open
@@ -175,6 +186,6 @@ open_issue() {
 case ${1:-sync} in
   sync) locked sync_panes "$(event_pane)" ;;
   refresh) rm -f "$state"/pr/* && locked sync_panes ;;
-  open) open_issue ;;
+  open) open_pr ;;
   *) echo "usage: $0 [sync|refresh|open]" >&2; exit 2 ;;
 esac

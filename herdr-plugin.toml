@@ -1,8 +1,8 @@
 id = "ilazaridis.pane-issue"
 name = "Pane Issue"
-version = "0.2.0"
+version = "0.3.0"
 min_herdr_version = "0.9.1"
-description = "Shows the GitHub issue each agent pane is working on as an $issue token in the Agents sidebar, and opens it with a key."
+description = "Shows the GitHub issue each agent pane is working on as an $issue token in the Agents sidebar, and opens its pull request with a key."
 platforms = ["linux", "macos"]
 
 # Tokens are not kept across a server restart, so label every agent again.
@@ -26,8 +26,8 @@ command = ["./pane-issue.sh", "sync"]
 
 [[actions]]
 id = "open"
-title = "Pane issue: open in browser"
-description = "Open the GitHub issue the focused pane is working on."
+title = "Pane issue: open PR in browser"
+description = "Open the pull request of the focused pane's branch, or its issue if there is no PR yet."
 contexts = ["global", "pane"]
 command = ["./pane-issue.sh", "open"]
 

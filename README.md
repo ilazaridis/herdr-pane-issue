@@ -3,7 +3,7 @@
 [![Release](https://img.shields.io/github/v/release/ilazaridis/herdr-pane-issue)](https://github.com/ilazaridis/herdr-pane-issue/releases/latest)
 
 [Herdr](https://herdr.dev) plugin: shows the GitHub issue each agent pane is
-working on in the Agents sidebar, and opens it with one key.
+working on in the Agents sidebar, and opens its pull request with one key.
 
 ```
  ○ my-app · 1
@@ -40,7 +40,8 @@ Claude Code, the working directory is read from its session transcript, so it
 follows the agent into worktrees.
 
 - Tokens: `$issue` (`#123`) and `$issue_url`.
-- Actions: `open` opens the focused pane's issue; `refresh` relabels every pane.
+- Actions: `open` opens the PR of the focused pane's branch, or its issue if
+  there is no PR yet; `refresh` relabels every pane.
 
 It's a key rather than a click because the Herdr sidebar can't hold links.
 
