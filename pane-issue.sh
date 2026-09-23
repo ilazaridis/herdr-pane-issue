@@ -2,9 +2,10 @@
 # Publishes the GitHub issue each agent pane is working on as pane tokens:
 #   $issue      "#123", for the Agents sidebar
 #   $issue_url  the issue's page, for the open action
-# The number comes from the branch checked out where the agent works
-# (feat/123-x, 123-x, fix/issue-123, fix/#123); when the branch names none,
-# from the issue that the branch's pull request closes (needs gh).
+# Where the agent works in a linked git worktree, the number comes from the
+# worktree's name (.worktrees/fix-123-x). Anywhere else it comes from the
+# branch (feat/123-x, 123-x, fix/issue-123, fix/#123), and when the branch names
+# none, from the issue that the branch's pull request closes (needs gh).
 #
 #   pane-issue.sh sync      label the event's pane, or every agent pane
 #   pane-issue.sh refresh   forget cached PR lookups, then label every agent pane
@@ -48,11 +49,14 @@ work_dir() { # cwd claude_session_id
   printf '%s\n' "$dir"
 }
 
-# First 1-6 digit part of a branch split on / _ - #. Skipped: a part after "pr"
-# (pr-729, review/pr-758 name a pull request) and a part next to another number
-# (node-5-3, 2026-4-25 are versions or dates; 2026.4.5 is never a whole part).
-issue_in_branch() {
+# First 1-6 digit part of a worktree or branch name split on / _ - #. Skipped:
+# a part after "pr" (pr-729, review/pr-758 name a pull request), a part next to
+# another number (node-5-3, 2026-4-25 are versions or dates; 2026.4.5 is never a
+# whole part), and Herdr's generated names, whose last part is a random hex id
+# (worktree/rapid-river-4821, worktree-rapid-river-4821).
+issue_in_name() {
   local parts i n
+  [[ $1 =~ ^worktree[/-][a-z]+-[a-z]+-[0-9a-f]{4}$ ]] && return 1
   IFS='/_#-' read -ra parts <<<"$1"
   n=${#parts[@]}
   for ((i = 0; i < n; i++)); do
@@ -97,18 +101,26 @@ issue_from_pr() { # dir branch
   [[ -s $cache ]] && cat "$cache"
 }
 
-# "number url" of the issue checked out in a directory; url may be missing.
+# "number url" of the issue a directory is for; url may be missing. A linked
+# worktree is named for its issue, so there the branch is not looked at.
 issue_for_dir() {
-  local dir=$1 branch num url=
+  local dir=$1 top git_dir common_dir branch num url=
   [[ -n $dir && -d $dir ]] || return 1
-  branch=$(git -C "$dir" symbolic-ref --short -q HEAD 2>/dev/null) || return 1
-  if num=$(issue_in_branch "$branch"); then
-    url=$(repo_url "$dir") && url="$url/issues/$num"
-    printf '%s %s\n' "$num" "$url"
-    return 0
+  { read -r top; read -r git_dir; read -r common_dir; } < <(git -C "$dir" rev-parse \
+    --path-format=absolute --show-toplevel --absolute-git-dir --git-common-dir 2>/dev/null)
+  [[ -n $top ]] || return 1
+  if [[ $git_dir != "$common_dir" ]]; then
+    num=$(issue_in_name "${top##*/}") || return 1
+  else
+    branch=$(git -C "$dir" symbolic-ref --short -q HEAD 2>/dev/null) || return 1
+    if ! num=$(issue_in_name "$branch"); then
+      case $branch in main | master | develop | trunk) return 1 ;; esac
+      issue_from_pr "$dir" "$branch"
+      return
+    fi
   fi
-  case $branch in main | master | develop | trunk) return 1 ;; esac
-  issue_from_pr "$dir" "$branch"
+  url=$(repo_url "$dir") && url="$url/issues/$num"
+  printf '%s %s\n' "$num" "$url"
 }
 
 # Pane named by the event that started this run, if any.

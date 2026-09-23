@@ -30,11 +30,12 @@ rows = [["state_icon", "machine", "workspace", "tab"], ["agent", { token = "$iss
 
 ## How it works
 
-The issue is the first number in the branch where the agent works
-(`feat/132-x`, `fix/issue-549-x`). If the branch has none, the plugin uses the
-issue that the branch's PR closes, looked up with `gh`. For Claude Code, the
-working directory is read from its session transcript, so it follows the agent
-into worktrees.
+If the agent works in a linked git worktree, the issue is the first number in
+the worktree's name (`.worktrees/fix-488-x`). Otherwise it is the first number
+in the branch (`feat/132-x`, `fix/issue-549-x`). If the branch has none, the
+plugin uses the issue that the branch's PR closes, looked up with `gh`. For
+Claude Code, the working directory is read from its session transcript, so it
+follows the agent into worktrees.
 
 - Tokens: `$issue` (`#123`) and `$issue_url`.
 - Actions: `open` opens the focused pane's issue; `refresh` relabels every pane.

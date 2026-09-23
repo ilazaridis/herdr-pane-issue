@@ -1,6 +1,6 @@
 id = "ilazaridis.pane-issue"
 name = "Pane Issue"
-version = "0.1.0"
+version = "0.2.0"
 min_herdr_version = "0.9.1"
 description = "Shows the GitHub issue each agent pane is working on as an $issue token in the Agents sidebar, and opens it with a key."
 platforms = ["linux", "macos"]
