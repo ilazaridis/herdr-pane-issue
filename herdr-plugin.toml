@@ -1,8 +1,8 @@
 id = "ilazaridis.pane-issue"
 name = "Pane Issue"
-version = "0.3.0"
+version = "0.4.0"
 min_herdr_version = "0.9.1"
-description = "Shows the GitHub issue each agent pane is working on as an $issue token in the Agents sidebar, and opens its pull request with a key."
+description = "Shows the GitHub issue and pull request each agent pane is working on in the Agents sidebar, and opens the PR with a key."
 platforms = ["linux", "macos"]
 
 # Tokens are not kept across a server restart, so label every agent again.
@@ -11,7 +11,8 @@ command = ["./pane-issue.sh", "sync"]
 
 # Herdr has no cwd-changed event. An agent that moves into another worktree or
 # switches branch does so while working, so re-check a pane whenever its agent
-# appears or changes state, and when it is focused.
+# appears or changes state, and when it is focused. The same checks notice a PR
+# opened without a push; a push is noticed at once through the git hook.
 [[events]]
 on = "pane.agent_detected"
 command = ["./pane-issue.sh", "sync"]
@@ -37,3 +38,17 @@ title = "Pane issue: refresh"
 description = "Forget cached PR lookups and label every agent pane again."
 contexts = ["global"]
 command = ["./pane-issue.sh", "refresh"]
+
+[[actions]]
+id = "install-git-hook"
+title = "Pane issue: install git push hook"
+description = "Add a hook to the global git config so an agent's push shows its PR right away. Repository hooks are untouched."
+contexts = ["global"]
+command = ["./pane-issue.sh", "install-git-hook"]
+
+[[actions]]
+id = "remove-git-hook"
+title = "Pane issue: remove git push hook"
+description = "Remove the hook from the global git config."
+contexts = ["global"]
+command = ["./pane-issue.sh", "remove-git-hook"]
